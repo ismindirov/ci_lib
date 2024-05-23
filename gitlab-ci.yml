@@ -1,0 +1,27 @@
+stages:
+  - rsync
+
+variables:
+  CONFIG_SERVER_VERSION: 3.0.5
+  DOCKER_IMAGE_NAME: hyness/spring-cloud-config-server
+  LOCAL_DOCKER_IMAGE_NAME: config-server
+  GITLAB_LOGIN: "gitlab-ci-token"
+  GITLAB_PWD: "$CI_BUILD_TOKEN"
+
+
+# update Spring config server image from remote docker repo
+RSync images:
+  stage: rsync
+  when: manual
+  tags: [spot]
+  image: docker:latest
+  script:
+    - echo "DOCKER IMAGE = $DOCKER_IMAGE_NAME:$CONFIG_SERVER_VERSION"
+    - echo "LOCAL IMAGE = $LOCAL_DOCKER_IMAGE_NAME"
+    - docker pull $DOCKER_IMAGE_NAME:$CONFIG_SERVER_VERSION
+    - docker pull $DOCKER_IMAGE_NAME:latest
+    - docker login -u $GITLAB_LOGIN -p $GITLAB_PWD $CI_REGISTRY
+    - docker tag $DOCKER_IMAGE_NAME:$CONFIG_SERVER_VERSION $CI_REGISTRY_IMAGE:v$CONFIG_SERVER_VERSION
+    - docker tag $DOCKER_IMAGE_NAME:latest $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:v$CONFIG_SERVER_VERSION
+    - docker push $CI_REGISTRY_IMAGE:latest
